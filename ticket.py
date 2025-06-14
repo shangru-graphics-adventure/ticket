@@ -62,14 +62,51 @@ class TicketApp:
         self.secondary_color = "#6c757d"  # Secondary gray
         self.hover_color = "#0b5ed7"  # Darker blue for hover
         
-        # Detect platform for appropriate fonts
+        # Button colors for Mac
+        self.mac_button_colors = {
+            'success': {
+                'normal': '#34c759',  # Mac green
+                'hover': '#30b753',
+                'active': '#2ea043'
+            },
+            'danger': {
+                'normal': '#ff3b30',  # Mac red
+                'hover': '#ff2d55',
+                'active': '#ff1a1a'
+            },
+            'accent': {
+                'normal': '#007aff',  # Mac blue
+                'hover': '#0066cc',
+                'active': '#0055b3'
+            }
+        }
+        
+        # Detect platform for appropriate fonts and styling
         import platform
-        if platform.system() == "Darwin":  # macOS
+        self.is_mac = platform.system() == "Darwin"
+        if self.is_mac:
             self.font_family = "SF Pro Text"
-        elif platform.system() == "Windows":
-            self.font_family = "Segoe UI"
+            self.button_style = {
+                'font': (self.font_family, 11, "bold"),
+                'fg': "white",
+                'width': 2,
+                'relief': "flat",
+                'borderwidth': 0,
+                'padx': 8,
+                'pady': 4,
+                'cursor': "pointinghand"  # Mac-style cursor
+            }
         else:
-            self.font_family = "Helvetica"
+            self.font_family = "Segoe UI"
+            self.button_style = {
+                'font': (self.font_family, 11, "bold"),
+                'fg': "white",
+                'width': 2,
+                'relief': "flat",
+                'borderwidth': 0,
+                'padx': 6,
+                'pady': 3
+            }
         
         self.root.configure(bg=self.bg_color)
         
@@ -635,6 +672,39 @@ class TicketApp:
             print(f"Error adding fridge item: {e}")
             self.conn.rollback()
 
+    def create_mac_button(self, parent, text, color_type, command):
+        """Create a Mac-style button with proper effects"""
+        colors = self.mac_button_colors[color_type]
+        btn = tk.Button(parent, text=text, command=command, **self.button_style)
+        
+        def on_enter(e):
+            btn.configure(bg=colors['hover'])
+            if self.is_mac:
+                btn.configure(relief="flat", borderwidth=0)
+        
+        def on_leave(e):
+            btn.configure(bg=colors['normal'])
+            if self.is_mac:
+                btn.configure(relief="flat", borderwidth=0)
+        
+        def on_press(e):
+            btn.configure(bg=colors['active'])
+            if self.is_mac:
+                btn.configure(relief="flat", borderwidth=0)
+        
+        def on_release(e):
+            btn.configure(bg=colors['hover'])
+            if self.is_mac:
+                btn.configure(relief="flat", borderwidth=0)
+        
+        btn.configure(bg=colors['normal'])
+        btn.bind('<Enter>', on_enter)
+        btn.bind('<Leave>', on_leave)
+        btn.bind('<ButtonPress-1>', on_press)
+        btn.bind('<ButtonRelease-1>', on_release)
+        
+        return btn
+
     def build_ticket_ui(self):
         # Clear existing UI
         for _, _, frame, _, _ in self.ticket_labels:
@@ -666,45 +736,28 @@ class TicketApp:
             button_frame = tk.Frame(frame, bg=self.bg_color)
             button_frame.pack(side=tk.RIGHT, padx=(10, 0))
             
-            # Modern button colors
-            complete_color = self.success_color if not ticket.completed else "#2ea043"
-            delete_color = self.danger_color
-            pause_color = self.accent_color if not ticket.paused else "#0a58ca"
-            
-            # Button style dictionary
-            button_style = {
-                'font': (self.font_family, 11, "bold"),
-                'fg': "white",
-                'width': 2,
-                'relief': "flat",
-                'borderwidth': 0
-            }
-            
-            complete_btn = tk.Button(button_frame, text="✔",
-                                  bg=complete_color,
-                                  command=lambda i=i: self.complete_ticket(i),
-                                  **button_style)
+            # Create Mac-style buttons
+            complete_btn = self.create_mac_button(
+                button_frame, "✔", 
+                'success' if not ticket.completed else 'accent',
+                lambda i=i: self.complete_ticket(i)
+            )
             complete_btn.pack(side=tk.LEFT, padx=4)
             
-            delete_btn = tk.Button(button_frame, text="✕",
-                                 bg=delete_color,
-                                 command=lambda i=i: self.delete_ticket(i),
-                                 **button_style)
+            delete_btn = self.create_mac_button(
+                button_frame, "✕",
+                'danger',
+                lambda i=i: self.delete_ticket(i)
+            )
             delete_btn.pack(side=tk.LEFT, padx=4)
             
             pause_text = "⏸" if not ticket.paused else "▶"
-            pause_btn = tk.Button(button_frame, text=pause_text,
-                                bg=pause_color,
-                                command=lambda i=i: self.toggle_ticket_pause(i),
-                                **button_style)
+            pause_btn = self.create_mac_button(
+                button_frame, pause_text,
+                'accent',
+                lambda i=i: self.toggle_ticket_pause(i)
+            )
             pause_btn.pack(side=tk.LEFT, padx=4)
-            
-            # Add hover effects
-            for btn in (complete_btn, delete_btn, pause_btn):
-                btn.bind('<Enter>', lambda e, b=btn: b.configure(bg=self.hover_color))
-                btn.bind('<Leave>', lambda e, b=btn, c=(complete_color if btn == complete_btn else 
-                                                      delete_color if btn == delete_btn else 
-                                                      pause_color): b.configure(bg=c))
             
             self.ticket_labels.append((lbl, ticket, frame, complete_btn, pause_btn))
 
@@ -736,13 +789,13 @@ class TicketApp:
                  ticket.title))
             self.conn.commit()
 
-            # Update only the pause button state
+            # Update only the pause button state with proper Mac colors
             if index < len(self.ticket_labels):
                 _, _, frame, _, pause_btn = self.ticket_labels[index]
                 if ticket.paused:
-                    pause_btn.configure(bg="#64B5F6")  # Lighter blue for paused
+                    pause_btn.configure(text="▶", bg=self.mac_button_colors['accent']['normal'])
                 else:
-                    pause_btn.configure(bg="#2196F3")  # Normal blue for unpaused
+                    pause_btn.configure(text="⏸", bg=self.mac_button_colors['accent']['normal'])
 
         except Exception as e:
             print(f"Error toggling ticket pause: {e}")
@@ -777,13 +830,13 @@ class TicketApp:
                  item.added_at.isoformat()))
             self.conn.commit()
 
-            # Update only the pause button state
+            # Update only the pause button state with proper Mac colors
             if index < len(self.fridge_labels):
                 _, _, _, pause_btn = self.fridge_labels[index]
                 if item.paused:
-                    pause_btn.configure(bg="#64B5F6")  # Lighter blue for paused
+                    pause_btn.configure(text="▶", bg=self.mac_button_colors['accent']['normal'])
                 else:
-                    pause_btn.configure(bg="#2196F3")  # Normal blue for unpaused
+                    pause_btn.configure(text="⏸", bg=self.mac_button_colors['accent']['normal'])
 
         except Exception as e:
             print(f"Error toggling fridge item pause: {e}")
@@ -890,37 +943,21 @@ class TicketApp:
             button_frame = tk.Frame(frame, bg=self.bg_color)
             button_frame.pack(side=tk.RIGHT, padx=(10, 0))
             
-            # Modern button colors
-            delete_color = self.danger_color
-            pause_color = self.accent_color if not item.paused else "#0a58ca"
-            
-            # Button style dictionary
-            button_style = {
-                'font': (self.font_family, 11, "bold"),
-                'fg': "white",
-                'width': 2,
-                'relief': "flat",
-                'borderwidth': 0
-            }
-            
-            delete_btn = tk.Button(button_frame, text="✕",
-                                 bg=delete_color,
-                                 command=lambda i=i: self.delete_fridge_item(i),
-                                 **button_style)
+            # Create Mac-style buttons
+            delete_btn = self.create_mac_button(
+                button_frame, "✕",
+                'danger',
+                lambda i=i: self.delete_fridge_item(i)
+            )
             delete_btn.pack(side=tk.LEFT, padx=4)
             
             pause_text = "⏸" if not item.paused else "▶"
-            pause_btn = tk.Button(button_frame, text=pause_text,
-                                bg=pause_color,
-                                command=lambda i=i: self.toggle_fridge_pause(i),
-                                **button_style)
+            pause_btn = self.create_mac_button(
+                button_frame, pause_text,
+                'accent',
+                lambda i=i: self.toggle_fridge_pause(i)
+            )
             pause_btn.pack(side=tk.LEFT, padx=4)
-            
-            # Add hover effects
-            for btn in (delete_btn, pause_btn):
-                btn.bind('<Enter>', lambda e, b=btn: b.configure(bg=self.hover_color))
-                btn.bind('<Leave>', lambda e, b=btn, c=(delete_color if btn == delete_btn else pause_color): 
-                        b.configure(bg=c))
             
             self.fridge_labels.append((lbl, item, frame, pause_btn))
 
