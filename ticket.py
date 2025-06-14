@@ -50,7 +50,28 @@ class TicketApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Ticket System")
-        self.root.configure(bg="#f4f4f4")
+        
+        # Modern color scheme that works well on both platforms
+        self.bg_color = "#ffffff"  # Pure white background
+        self.frame_bg = "#f8f9fa"  # Light gray for frames
+        self.border_color = "#e9ecef"  # Subtle border
+        self.text_color = "#212529"  # Dark gray text
+        self.accent_color = "#0d6efd"  # Modern blue
+        self.success_color = "#198754"  # Modern green
+        self.danger_color = "#dc3545"  # Modern red
+        self.secondary_color = "#6c757d"  # Secondary gray
+        self.hover_color = "#0b5ed7"  # Darker blue for hover
+        
+        # Detect platform for appropriate fonts
+        import platform
+        if platform.system() == "Darwin":  # macOS
+            self.font_family = "SF Pro Text"
+        elif platform.system() == "Windows":
+            self.font_family = "Segoe UI"
+        else:
+            self.font_family = "Helvetica"
+        
+        self.root.configure(bg=self.bg_color)
         
         # Initialize lists first
         self.tickets = []
@@ -59,65 +80,106 @@ class TicketApp:
         self.ticket_labels = []
         self.fridge_labels = []
         
-        # Database management frame
-        self.db_frame = tk.Frame(root, bg="#f4f4f4")
-        self.db_frame.pack(pady=5, padx=10, fill=tk.X)
+        # Configure styles for modern look
+        style = ttk.Style()
+        style.configure("TButton", 
+                       padding=(10, 6),
+                       font=(self.font_family, 11))
+        style.configure("TCombobox", 
+                       padding=(8, 6),
+                       font=(self.font_family, 11))
+        style.configure("TLabel", 
+                       font=(self.font_family, 11),
+                       background=self.bg_color)
+        style.configure("TLabelframe", 
+                       font=(self.font_family, 12, "bold"),
+                       background=self.bg_color)
+        style.configure("TLabelframe.Label", 
+                       font=(self.font_family, 12, "bold"),
+                       background=self.bg_color)
         
-        # Database selector
+        # Database management frame with modern styling
+        self.db_frame = tk.Frame(root, bg=self.bg_color, padx=12, pady=10)
+        self.db_frame.pack(fill=tk.X)
+        
+        # Database selector with modern styling
         self.db_var = tk.StringVar()
         self.db_combo = ttk.Combobox(self.db_frame, textvariable=self.db_var, width=30)
-        self.db_combo.pack(side=tk.LEFT, padx=5)
+        self.db_combo.pack(side=tk.LEFT, padx=6)
         self.db_combo.bind('<<ComboboxSelected>>', self.switch_database)
         
-        # Database buttons
-        ttk.Button(self.db_frame, text="New DB", command=self.create_new_database).pack(side=tk.LEFT, padx=2)
-        ttk.Button(self.db_frame, text="Open DB", command=self.open_database).pack(side=tk.LEFT, padx=2)
+        # Database buttons with modern styling
+        ttk.Button(self.db_frame, text="New DB", command=self.create_new_database).pack(side=tk.LEFT, padx=4)
+        ttk.Button(self.db_frame, text="Open DB", command=self.open_database).pack(side=tk.LEFT, padx=4)
         
-        # Create UI frames
-        self.input_frame = tk.Frame(root, bg="#f4f4f4")
-        self.input_frame.pack(pady=10, padx=10, fill=tk.X)
+        # Create input frame with modern spacing
+        self.input_frame = tk.Frame(root, bg=self.bg_color, padx=12, pady=12)
+        self.input_frame.pack(fill=tk.X)
 
-        style = ttk.Style()
-        style.configure("TButton", padding=6)
-        style.configure("TCombobox", padding=5)
-
+        # Input fields with modern styling
         self.desc_var = tk.StringVar()
         self.desc_combo = ttk.Combobox(self.input_frame, textvariable=self.desc_var, width=30)
-        self.desc_combo.pack(side=tk.LEFT, padx=2)
+        self.desc_combo.pack(side=tk.LEFT, padx=6)
 
+        # Time input fields with modern styling
+        time_frame = tk.Frame(self.input_frame, bg=self.bg_color)
+        time_frame.pack(side=tk.LEFT, padx=12)
+        
+        # Style for time input fields
+        time_entry_style = {
+            'font': (self.font_family, 11),
+            'width': 3,
+            'relief': 'solid',
+            'borderwidth': 1
+        }
+        time_label_style = {
+            'font': (self.font_family, 11),
+            'bg': self.bg_color,
+            'fg': self.text_color
+        }
+        
         self.day_var = tk.StringVar(value="0")
-        tk.Entry(self.input_frame, textvariable=self.day_var, width=3).pack(side=tk.LEFT)
-        tk.Label(self.input_frame, text="d", bg="#f4f4f4").pack(side=tk.LEFT)
+        tk.Entry(time_frame, textvariable=self.day_var, **time_entry_style).pack(side=tk.LEFT)
+        tk.Label(time_frame, text="d", **time_label_style).pack(side=tk.LEFT, padx=(0, 6))
 
         self.hour_var = tk.StringVar(value="0")
-        tk.Entry(self.input_frame, textvariable=self.hour_var, width=3).pack(side=tk.LEFT)
-        tk.Label(self.input_frame, text="h", bg="#f4f4f4").pack(side=tk.LEFT)
+        tk.Entry(time_frame, textvariable=self.hour_var, **time_entry_style).pack(side=tk.LEFT)
+        tk.Label(time_frame, text="h", **time_label_style).pack(side=tk.LEFT, padx=(0, 6))
 
         self.min_var = tk.StringVar(value="5")
-        tk.Entry(self.input_frame, textvariable=self.min_var, width=3).pack(side=tk.LEFT)
-        tk.Label(self.input_frame, text="m", bg="#f4f4f4").pack(side=tk.LEFT)
+        tk.Entry(time_frame, textvariable=self.min_var, **time_entry_style).pack(side=tk.LEFT)
+        tk.Label(time_frame, text="m", **time_label_style).pack(side=tk.LEFT, padx=(0, 6))
 
         self.sec_var = tk.StringVar(value="0")
-        tk.Entry(self.input_frame, textvariable=self.sec_var, width=3).pack(side=tk.LEFT)
-        tk.Label(self.input_frame, text="s", bg="#f4f4f4").pack(side=tk.LEFT)
+        tk.Entry(time_frame, textvariable=self.sec_var, **time_entry_style).pack(side=tk.LEFT)
+        tk.Label(time_frame, text="s", **time_label_style).pack(side=tk.LEFT, padx=(0, 6))
 
-        ttk.Button(self.input_frame, text="Add Ticket", command=self.add_ticket).pack(side=tk.LEFT, padx=5)
+        # Add Ticket button with modern styling
+        ttk.Button(self.input_frame, text="Add Ticket", command=self.add_ticket).pack(side=tk.LEFT, padx=12)
 
+        # Fridge input with modern styling
         self.fridge_var = tk.StringVar()
-        tk.Entry(self.input_frame, textvariable=self.fridge_var, width=20).pack(side=tk.LEFT, padx=5)
-        ttk.Button(self.input_frame, text="Add Item", command=self.add_fridge_item).pack(side=tk.LEFT, padx=5)
+        tk.Entry(self.input_frame, textvariable=self.fridge_var, width=20, 
+                font=(self.font_family, 11), relief='solid', borderwidth=1).pack(side=tk.LEFT, padx=12)
+        ttk.Button(self.input_frame, text="Add Item", command=self.add_fridge_item).pack(side=tk.LEFT, padx=4)
 
-        self.ticket_frame = tk.LabelFrame(root, text="Tickets", font=("Arial", 12, "bold"), bg="#ffffff", padx=10, pady=10)
-        self.ticket_frame.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
+        # Ticket frame with modern styling
+        self.ticket_frame = tk.LabelFrame(root, text="Tickets", 
+                                        font=(self.font_family, 12, "bold"),
+                                        bg=self.bg_color,
+                                        padx=16, pady=16)
+        self.ticket_frame.pack(padx=16, pady=12, fill=tk.BOTH, expand=True)
 
-        self.fridge_frame = tk.LabelFrame(root, text="Fridge Items", font=("Arial", 12, "bold"), bg="#ffffff", padx=10, pady=10)
-        self.fridge_frame.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
+        # Fridge frame with modern styling
+        self.fridge_frame = tk.LabelFrame(root, text="Fridge Items",
+                                        font=(self.font_family, 12, "bold"),
+                                        bg=self.bg_color,
+                                        padx=16, pady=16)
+        self.fridge_frame.pack(padx=16, pady=12, fill=tk.BOTH, expand=True)
         
-        # Initialize database - will auto-select first available
-        self.current_db = None  # Will be set by update_database_list
-        self.update_database_list()  # This will find and select the first database
-        
-        # Start the UI update loop
+        # Initialize database
+        self.current_db = None
+        self.update_database_list()
         self.update_ui()
 
     def clear_ui(self):
@@ -581,49 +643,68 @@ class TicketApp:
         
         # Build UI for all tickets
         for i, ticket in enumerate(self.tickets):
-            # Create a frame with a border and padding
-            frame = tk.Frame(self.ticket_frame, bg="#ffffff", 
-                           highlightbackground="#e0e0e0", 
+            # Create a frame with modern styling
+            frame = tk.Frame(self.ticket_frame, 
+                           bg=self.bg_color,
+                           highlightbackground=self.border_color,
                            highlightthickness=1,
-                           padx=10, pady=5)
-            frame.pack(fill=tk.X, pady=3, padx=5)
+                           padx=14, pady=10)
+            frame.pack(fill=tk.X, pady=5, padx=8)
             
             # Create a container for the label
-            label_container = tk.Frame(frame, bg="#ffffff")
+            label_container = tk.Frame(frame, bg=self.bg_color)
             label_container.pack(side=tk.LEFT, expand=True, fill=tk.X)
             
-            lbl = tk.Label(label_container, anchor='w', bg="#ffffff", 
-                         font=("Arial", 10))
+            lbl = tk.Label(label_container, 
+                         anchor='w',
+                         bg=self.bg_color,
+                         font=(self.font_family, 11),
+                         fg=self.text_color)
             lbl.pack(side=tk.LEFT, expand=True, fill=tk.X)
             
-            # Style the buttons
-            button_frame = tk.Frame(frame, bg="#ffffff")
-            button_frame.pack(side=tk.RIGHT, padx=(5, 0))
+            # Style the buttons with modern appearance
+            button_frame = tk.Frame(frame, bg=self.bg_color)
+            button_frame.pack(side=tk.RIGHT, padx=(10, 0))
             
-            complete_btn = tk.Button(button_frame, text="✔", 
-                                  font=("Arial", 10, "bold"),
-                                  bg="#4CAF50" if not ticket.completed else "#81C784",
-                                  fg="white",
-                                  width=2,
-                                  command=lambda i=i: self.complete_ticket(i))
-            complete_btn.pack(side=tk.LEFT, padx=2)
+            # Modern button colors
+            complete_color = self.success_color if not ticket.completed else "#2ea043"
+            delete_color = self.danger_color
+            pause_color = self.accent_color if not ticket.paused else "#0a58ca"
+            
+            # Button style dictionary
+            button_style = {
+                'font': (self.font_family, 11, "bold"),
+                'fg': "white",
+                'width': 2,
+                'relief': "flat",
+                'borderwidth': 0
+            }
+            
+            complete_btn = tk.Button(button_frame, text="✔",
+                                  bg=complete_color,
+                                  command=lambda i=i: self.complete_ticket(i),
+                                  **button_style)
+            complete_btn.pack(side=tk.LEFT, padx=4)
             
             delete_btn = tk.Button(button_frame, text="✕",
-                                 font=("Arial", 10, "bold"),
-                                 bg="#f44336",
-                                 fg="white",
-                                 width=2,
-                                 command=lambda i=i: self.delete_ticket(i))
-            delete_btn.pack(side=tk.LEFT, padx=2)
+                                 bg=delete_color,
+                                 command=lambda i=i: self.delete_ticket(i),
+                                 **button_style)
+            delete_btn.pack(side=tk.LEFT, padx=4)
             
             pause_text = "⏸" if not ticket.paused else "▶"
             pause_btn = tk.Button(button_frame, text=pause_text,
-                                font=("Arial", 10, "bold"),
-                                bg="#2196F3" if not ticket.paused else "#64B5F6",
-                                fg="white",
-                                width=2,
-                                command=lambda i=i: self.toggle_ticket_pause(i))
-            pause_btn.pack(side=tk.LEFT, padx=2)
+                                bg=pause_color,
+                                command=lambda i=i: self.toggle_ticket_pause(i),
+                                **button_style)
+            pause_btn.pack(side=tk.LEFT, padx=4)
+            
+            # Add hover effects
+            for btn in (complete_btn, delete_btn, pause_btn):
+                btn.bind('<Enter>', lambda e, b=btn: b.configure(bg=self.hover_color))
+                btn.bind('<Leave>', lambda e, b=btn, c=(complete_color if btn == complete_btn else 
+                                                      delete_color if btn == delete_btn else 
+                                                      pause_color): b.configure(bg=c))
             
             self.ticket_labels.append((lbl, ticket, frame, complete_btn, pause_btn))
 
@@ -659,9 +740,9 @@ class TicketApp:
             if index < len(self.ticket_labels):
                 _, _, frame, _, pause_btn = self.ticket_labels[index]
                 if ticket.paused:
-                    pause_btn.configure(text="▶", bg="#64B5F6")  # Lighter blue for paused
+                    pause_btn.configure(bg="#64B5F6")  # Lighter blue for paused
                 else:
-                    pause_btn.configure(text="⏸", bg="#2196F3")  # Normal blue for unpaused
+                    pause_btn.configure(bg="#2196F3")  # Normal blue for unpaused
 
         except Exception as e:
             print(f"Error toggling ticket pause: {e}")
@@ -700,9 +781,9 @@ class TicketApp:
             if index < len(self.fridge_labels):
                 _, _, _, pause_btn = self.fridge_labels[index]
                 if item.paused:
-                    pause_btn.configure(text="▶", bg="#64B5F6")  # Lighter blue for paused
+                    pause_btn.configure(bg="#64B5F6")  # Lighter blue for paused
                 else:
-                    pause_btn.configure(text="⏸", bg="#2196F3")  # Normal blue for unpaused
+                    pause_btn.configure(bg="#2196F3")  # Normal blue for unpaused
 
         except Exception as e:
             print(f"Error toggling fridge item pause: {e}")
@@ -786,41 +867,60 @@ class TicketApp:
         
         # Build UI for all items
         for i, item in enumerate(self.fridge_items):
-            # Create a frame with a border and padding
-            frame = tk.Frame(self.fridge_frame, bg="#ffffff", 
-                           highlightbackground="#e0e0e0", 
+            # Create a frame with modern styling
+            frame = tk.Frame(self.fridge_frame,
+                           bg=self.bg_color,
+                           highlightbackground=self.border_color,
                            highlightthickness=1,
-                           padx=10, pady=5)
-            frame.pack(fill=tk.X, pady=3, padx=5)
+                           padx=14, pady=10)
+            frame.pack(fill=tk.X, pady=5, padx=8)
             
             # Create a container for the label
-            label_container = tk.Frame(frame, bg="#ffffff")
+            label_container = tk.Frame(frame, bg=self.bg_color)
             label_container.pack(side=tk.LEFT, expand=True, fill=tk.X)
             
-            lbl = tk.Label(label_container, anchor='w', bg="#ffffff", 
-                         font=("Arial", 10))
+            lbl = tk.Label(label_container,
+                         anchor='w',
+                         bg=self.bg_color,
+                         font=(self.font_family, 11),
+                         fg=self.text_color)
             lbl.pack(side=tk.LEFT, expand=True, fill=tk.X)
             
-            # Style the buttons
-            button_frame = tk.Frame(frame, bg="#ffffff")
-            button_frame.pack(side=tk.RIGHT, padx=(5, 0))
+            # Style the buttons with modern appearance
+            button_frame = tk.Frame(frame, bg=self.bg_color)
+            button_frame.pack(side=tk.RIGHT, padx=(10, 0))
+            
+            # Modern button colors
+            delete_color = self.danger_color
+            pause_color = self.accent_color if not item.paused else "#0a58ca"
+            
+            # Button style dictionary
+            button_style = {
+                'font': (self.font_family, 11, "bold"),
+                'fg': "white",
+                'width': 2,
+                'relief': "flat",
+                'borderwidth': 0
+            }
             
             delete_btn = tk.Button(button_frame, text="✕",
-                                 font=("Arial", 10, "bold"),
-                                 bg="#f44336",
-                                 fg="white",
-                                 width=2,
-                                 command=lambda i=i: self.delete_fridge_item(i))
-            delete_btn.pack(side=tk.LEFT, padx=2)
+                                 bg=delete_color,
+                                 command=lambda i=i: self.delete_fridge_item(i),
+                                 **button_style)
+            delete_btn.pack(side=tk.LEFT, padx=4)
             
             pause_text = "⏸" if not item.paused else "▶"
             pause_btn = tk.Button(button_frame, text=pause_text,
-                                font=("Arial", 10, "bold"),
-                                bg="#2196F3" if not item.paused else "#64B5F6",
-                                fg="white",
-                                width=2,
-                                command=lambda i=i: self.toggle_fridge_pause(i))
-            pause_btn.pack(side=tk.LEFT, padx=2)
+                                bg=pause_color,
+                                command=lambda i=i: self.toggle_fridge_pause(i),
+                                **button_style)
+            pause_btn.pack(side=tk.LEFT, padx=4)
+            
+            # Add hover effects
+            for btn in (delete_btn, pause_btn):
+                btn.bind('<Enter>', lambda e, b=btn: b.configure(bg=self.hover_color))
+                btn.bind('<Leave>', lambda e, b=btn, c=(delete_color if btn == delete_btn else pause_color): 
+                        b.configure(bg=c))
             
             self.fridge_labels.append((lbl, item, frame, pause_btn))
 
